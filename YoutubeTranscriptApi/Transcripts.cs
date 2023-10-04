@@ -282,8 +282,7 @@ namespace YoutubeTranscriptApi
 
         private static string getLanguageDescription(IEnumerable<string> transcriptStrings)
         {
-            if (!transcriptStrings.Any()) return "None";
-            return string.Join("\n", transcriptStrings.Select(transcript => $" - {transcript}"));
+            return !transcriptStrings.Any() ? "None" : string.Join("\n", transcriptStrings.Select(transcript => $" - {transcript}"));
         }
     }
 

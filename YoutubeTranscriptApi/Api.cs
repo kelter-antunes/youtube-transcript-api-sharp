@@ -7,22 +7,22 @@ using System.Net.Http;
 namespace YoutubeTranscriptApi
 {
     // https://github.com/jdepoix/youtube-transcript-api/blob/master/youtube_transcript_api/_api.py
-
+    
     /// <summary>
     /// YouTube transcript api.
     /// </summary>
-    public sealed class YouTubeTranscriptApi : IDisposable
+    public sealed class YouTubeTranscriptApi
     {
-        private readonly HttpClient _httpClient;
         private readonly HttpClientHandler _httpHandler;
+        private static readonly List<string> defaultLangauges = new List<string> { "en" };
+        private static readonly HttpClient _httpClient = new HttpClient();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="YouTubeTranscriptApi"/> class.
         /// </summary>
         public YouTubeTranscriptApi()
         {
-            _httpHandler = new HttpClientHandler() { CookieContainer = new CookieContainer() };
-            _httpClient = new HttpClient(_httpHandler, true);
+            _httpHandler = new HttpClientHandler { CookieContainer = new CookieContainer() };
         }
 
         /// <summary>
@@ -56,19 +56,17 @@ namespace YoutubeTranscriptApi
         ///            # or automatically generated ones
         ///            transcript = transcript_list.find_generated_transcript(['de', 'en'])
         /// </summary>
-        /// <param name="video_id">the youtube video id</param>
-        /// <param name="proxies">a dictionary mapping of http and https proxies to be used for the network requests</param>
+        /// <param name="videoId">the youtube video id</param>
         /// <param name="cookies">a string of the path to a text file containing youtube authorization cookies</param>
         /// <returns>the list of available transcripts</returns>
-        public TranscriptList ListTranscripts(string video_id, Dictionary<string, string> proxies = null, string cookies = null)
+        public TranscriptList ListTranscripts(string videoId, string? cookies = null)
         {
             if (cookies != null)
             {
-                _httpHandler.CookieContainer.Add(loadCookies(cookies, video_id));
+                _httpHandler.CookieContainer.Add(loadCookies(cookies, videoId));
             }
-
-            //    http_client.proxies = proxies if proxies else {}
-            return new TranscriptListFetcher(_httpClient, _httpHandler).Fetch(video_id);
+            
+            return new TranscriptListFetcher(_httpClient, _httpHandler).Fetch(videoId);
         }
 
         /// <summary>
@@ -84,14 +82,9 @@ namespace YoutubeTranscriptApi
         /// <param name="cookies">a string of the path to a text file containing youtube authorization cookies</param>
         /// <returns>a tuple containing a dictionary mapping video ids onto their corresponding transcripts, and a list of
         /// video ids, which could not be retrieved</returns>
-        public (Dictionary<string, IEnumerable<TranscriptItem>>, IReadOnlyList<string>) GetTranscripts(IReadOnlyList<string> video_ids, IReadOnlyList<string> languages = null, bool continue_after_error = false, Dictionary<string, string> proxies = null, string cookies = null)
+        public (Dictionary<string, IEnumerable<TranscriptItem>>, IReadOnlyList<string>) GetTranscripts(IEnumerable<string> video_ids, IReadOnlyList<string>? languages = null, bool continue_after_error = false, string? cookies = null)
         {
-            //     :param proxies: a dictionary mapping of http and https proxies to be used for the network requests
-            //     :type proxies: { 'http': str, 'https': str} -http://docs.python-requests.org/en/master/user/advanced/#proxies
-            if (languages == null)
-            {
-                languages = new List<string>() { "en" };
-            }
+            languages ??= defaultLangauges;
 
             var data = new Dictionary<string, IEnumerable<TranscriptItem>>();
             var unretrievable_videos = new List<string>();
@@ -100,7 +93,7 @@ namespace YoutubeTranscriptApi
             {
                 try
                 {
-                    data[video_id] = GetTranscript(video_id, languages, proxies, cookies);
+                    data[video_id] = GetTranscript(video_id, languages, cookies);
                 }
                 catch (Exception)
                 {
@@ -111,7 +104,7 @@ namespace YoutubeTranscriptApi
 
             return (data, unretrievable_videos);
         }
-
+        
         /// <summary>
         /// Retrieves the transcript for a single video. This is just a shortcut for calling::
         ///<para>YouTubeTranscriptApi.list_transcripts(video_id, proxies).find_transcript(languages).fetch()</para>
@@ -123,18 +116,13 @@ namespace YoutubeTranscriptApi
         /// <param name="proxies">a dictionary mapping of http and https proxies to be used for the network requests</param>
         /// <param name="cookies"> a string of the path to a text file containing youtube authorization cookies</param>
         /// <returns></returns>
-        public IEnumerable<TranscriptItem> GetTranscript(string video_id, IReadOnlyList<string> languages = null, Dictionary<string, string> proxies = null, string cookies = null)
+        public IEnumerable<TranscriptItem> GetTranscript(string video_id, IReadOnlyList<string>? languages = null, string? cookies = null)
         {
-            if (languages == null)
-            {
-                languages = new List<string>() { "en" };
-            }
-            //:type proxies: {'http': str, 'https': str} - http://docs.python-requests.org/en/master/user/advanced/#proxies
-
-            return ListTranscripts(video_id, proxies, cookies).FindTranscript(languages).Fetch();
+            languages ??= defaultLangauges;
+            return ListTranscripts(video_id, cookies).FindTranscript(languages).Fetch();
         }
 
-        internal CookieCollection loadCookies(string cookies, string video_id)
+        internal static CookieCollection loadCookies(string cookies, string video_id)
         {
             // https://stackoverflow.com/questions/15788341/import-cookies-from-text-file-in-c-sharp-window-forms
             // https://stackoverflow.com/questions/12024657/cookiecontainer-confusion
@@ -220,12 +208,6 @@ namespace YoutubeTranscriptApi
 
                 yield return (domain, flag, path, secure, expiration, name, value);
             }
-        }
-
-        /// <inheritdoc/>
-        public void Dispose()
-        {
-            _httpClient.Dispose();
         }
     }
 }

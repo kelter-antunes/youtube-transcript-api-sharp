@@ -11,7 +11,7 @@ namespace YoutubeTranscriptApi.Tests
 {
     // https://github.com/jdepoix/youtube-transcript-api/blob/master/youtube_transcript_api/test/test_api.py
 
-    public sealed class TestYouTubeTranscriptApi : IDisposable
+    public sealed class TestYouTubeTranscriptApi
     {
         private readonly TranscriptList _listTranscriptsGJLlxj_dtq8;
         private readonly YouTubeTranscriptApi _youTubeTranscriptApi;
@@ -19,11 +19,6 @@ namespace YoutubeTranscriptApi.Tests
         {
             _youTubeTranscriptApi = new YouTubeTranscriptApi();
             _listTranscriptsGJLlxj_dtq8 = _youTubeTranscriptApi.ListTranscripts("GJLlxj_dtq8");
-        }
-
-        public void Dispose()
-        {
-            _youTubeTranscriptApi.Dispose();
         }
 
         private static string LoadAsset(string fileName)
@@ -35,10 +30,9 @@ namespace YoutubeTranscriptApi.Tests
         [Fact]
         public void test_get_transcript()
         {
-            using (var youTubeTranscriptApi = new YouTubeTranscriptApi())
-            {
-                var transcript = youTubeTranscriptApi.GetTranscript("GJLlxj_dtq8");
-            }
+            var youTubeTranscriptApi = new YouTubeTranscriptApi();
+            var transcript = youTubeTranscriptApi.GetTranscript("GJLlxj_dtq8");
+            
         }
 
         [Fact]
@@ -116,23 +110,22 @@ namespace YoutubeTranscriptApi.Tests
         [Fact]
         public void test_get_transcript__correct_language_is_used()
         {
-            using (var youTubeTranscriptApi = new YouTubeTranscriptApi())
-            {
-                var transcript = youTubeTranscriptApi.GetTranscript("GJLlxj_dtq8", new[] { "de", "en" }).ToArray();
+            var youTubeTranscriptApi = new YouTubeTranscriptApi();
+            var transcript = youTubeTranscriptApi.GetTranscript("GJLlxj_dtq8", new[] { "de", "en" }).ToArray();
 
-                // Check that it's in german
-                Assert.NotEmpty(transcript);
+            // Check that it's in german
+            Assert.NotEmpty(transcript);
 
-                Assert.Equal("Hey, wie geht es Dave 2d hier?", transcript[0].Text);
+            Assert.Equal("Hey, wie geht es Dave 2d hier?", transcript[0].Text);
 
-                /*
-                query_string = httpretty.last_request().querystring
+            /*
+            query_string = httpretty.last_request().querystring
 
-                self.assertIn('lang', query_string)
-                self.assertEqual(len(query_string['lang']), 1)
-                self.assertEqual(query_string['lang'][0], 'de')
-                    */
-            }
+            self.assertIn('lang', query_string)
+            self.assertEqual(len(query_string['lang']), 1)
+            self.assertEqual(query_string['lang'][0], 'de')
+                */
+            
         }
 
         [Fact(Skip = "TO DO")]
@@ -142,10 +135,9 @@ namespace YoutubeTranscriptApi.Tests
         [Fact(Skip = "TO DO")]
         public void test_get_transcript__create_consent_cookie_if_needed()
         {
-            using (var youTubeTranscriptApi = new YouTubeTranscriptApi())
-            {
-                var transcript = youTubeTranscriptApi.GetTranscript("F1xioXWb8CY").ToList();
-            }
+            var youTubeTranscriptApi = new YouTubeTranscriptApi();
+            var transcript = youTubeTranscriptApi.GetTranscript("F1xioXWb8CY").ToList();
+            
 
             /*
                     httpretty.register_uri(
@@ -172,17 +164,14 @@ namespace YoutubeTranscriptApi.Tests
         [Fact]
         public void test_get_transcript__exception_if_create_consent_cookie_failed()
         {
-            Assert.Throws<FailedToCreateConsentCookie>(() =>
+            string html = LoadAsset("youtube_consent_page.html.static");
+            using (var httpHandler = new HttpClientHandler() { CookieContainer = new CookieContainer() })
+            using (var httpRequest = new HttpClient(httpHandler))
             {
-                string html = LoadAsset("youtube_consent_page.html.static");
-                using (var httpHandler = new HttpClientHandler() { CookieContainer = new CookieContainer() })
-                using (var httpRequest = new HttpClient(httpHandler))
-                {
-                    var transcriptListFetcher = new TranscriptListFetcher(httpRequest, httpHandler);
-                    //transcriptListFetcher.extractCaptionsJson(html, "F1xioXWb8CY");
-                    transcriptListFetcher.createConsentCookie(html, "F1xioXWb8CY");
-                }
-            });
+                var transcriptListFetcher = new TranscriptListFetcher(httpRequest, httpHandler);
+                //transcriptListFetcher.extractCaptionsJson(html, "F1xioXWb8CY");
+                transcriptListFetcher.createConsentCookie(html, "F1xioXWb8CY");
+            }
         }
 
         [Fact]
@@ -243,10 +232,9 @@ namespace YoutubeTranscriptApi.Tests
         {
             Assert.Throws<TranscriptsDisabled>(() =>
             {
-                using (var youTubeTranscriptApi = new YouTubeTranscriptApi())
-                {
-                    youTubeTranscriptApi.GetTranscript("dsMFmonKDD4");
-                }
+                var youTubeTranscriptApi = new YouTubeTranscriptApi();
+                youTubeTranscriptApi.GetTranscript("dsMFmonKDD4");
+                
             });
         }
 
@@ -255,17 +243,15 @@ namespace YoutubeTranscriptApi.Tests
         {
             Assert.Throws<NoTranscriptFound>(() =>
             {
-                using (var youTubeTranscriptApi = new YouTubeTranscriptApi())
-                {
-                    youTubeTranscriptApi.GetTranscript("GJLlxj_dtq8", languages: new[] { "cz" });
-                }
+                var youTubeTranscriptApi = new YouTubeTranscriptApi();
+                youTubeTranscriptApi.GetTranscript("GJLlxj_dtq8", languages: new[] { "cz" });
             });
         }
 
         [Fact]
         public void test_get_transcript__exception_if_no_transcript_available()
         {
-            Assert.Throws<NoTranscriptAvailable>(() =>
+            Assert.Throws<VideoUnavailable>(() =>
             {
                 string html = LoadAsset("youtube_no_transcript_available.html.static");
                 using (var httpHandler = new HttpClientHandler() { CookieContainer = new CookieContainer() })
@@ -275,10 +261,8 @@ namespace YoutubeTranscriptApi.Tests
                     TranscriptListFetcher.extractCaptionsJson(html, "MwBPvcYFY2E");
                 }
 
-                using (var youTubeTranscriptApi = new YouTubeTranscriptApi())
-                {
-                    youTubeTranscriptApi.GetTranscript("MwBPvcYFY2E");
-                }
+                var youTubeTranscriptApi = new YouTubeTranscriptApi();
+                youTubeTranscriptApi.GetTranscript("MwBPvcYFY2E");
             });
         }
 
@@ -289,10 +273,8 @@ namespace YoutubeTranscriptApi.Tests
         [Fact]
         public void test_get_transcript__with_cookies()
         {
-            using (var youTubeTranscriptApi = new YouTubeTranscriptApi())
-            {
-                var transcript = youTubeTranscriptApi.GetTranscript("GJLlxj_dtq8", cookies: Path.Combine(Directory.GetCurrentDirectory(), "example_cookies.txt"));
-            }
+            var youTubeTranscriptApi = new YouTubeTranscriptApi();
+            var transcript = youTubeTranscriptApi.GetTranscript("GJLlxj_dtq8", cookies: Path.Combine(Directory.GetCurrentDirectory(), "example_cookies.txt"));
         }
 
         // TO FINSIH
@@ -303,13 +285,11 @@ namespace YoutubeTranscriptApi.Tests
             var dirname = Directory.GetCurrentDirectory();
             var cookies = Path.Combine(dirname, "example_cookies.txt");
 
-            using (var youTubeTranscriptApi = new YouTubeTranscriptApi())
-            {
-                var session_cookies = youTubeTranscriptApi.loadCookies(cookies, "GJLlxj_dtq8");
+            var youTubeTranscriptApi = new YouTubeTranscriptApi();
+            var session_cookies = YouTubeTranscriptApi.loadCookies(cookies, "GJLlxj_dtq8");
 
-                Assert.Single(session_cookies);
-                Assert.Equal("TEST_FIELD=TEST_VALUE", session_cookies[0].ToString());
-            }
+            Assert.Single(session_cookies);
+            Assert.Equal("TEST_FIELD=TEST_VALUE", session_cookies[0].ToString());
         }
 
         [Fact]
@@ -318,11 +298,7 @@ namespace YoutubeTranscriptApi.Tests
             Assert.Throws<CookiePathInvalid>(() =>
             {
                 const string cookies = "nonexistent_cookies.txt";
-
-                using (var youTubeTranscriptApi = new YouTubeTranscriptApi())
-                {
-                    var session_cookies = youTubeTranscriptApi.loadCookies(cookies, "GJLlxj_dtq8");
-                }
+                var session_cookies = YouTubeTranscriptApi.loadCookies(cookies, "GJLlxj_dtq8");
             });
         }
 
@@ -333,11 +309,7 @@ namespace YoutubeTranscriptApi.Tests
             {
                 var dirname = Directory.GetCurrentDirectory();
                 var cookies = Path.Combine(dirname, "expired_example_cookies.txt");
-
-                using (var youTubeTranscriptApi = new YouTubeTranscriptApi())
-                {
-                    var session_cookies = youTubeTranscriptApi.loadCookies(cookies, "GJLlxj_dtq8");
-                }
+                var session_cookies = YouTubeTranscriptApi.loadCookies(cookies, "GJLlxj_dtq8");
             });
         }
     }
