@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
 
 namespace YoutubeTranscriptApi
 {
@@ -15,7 +16,13 @@ namespace YoutubeTranscriptApi
     {
         private readonly HttpClientHandler _httpHandler;
         private static readonly List<string> defaultLangauges = new List<string> { "en" };
-        private static readonly HttpClient _httpClient = new HttpClient();
+        private static readonly HttpClient _httpClient = new HttpClient()
+        {
+            DefaultRequestHeaders =
+            {
+                {"Accept-Language", "en-US"}
+            }
+        };
 
         /// <summary>
         /// Initializes a new instance of the <see cref="YouTubeTranscriptApi"/> class.

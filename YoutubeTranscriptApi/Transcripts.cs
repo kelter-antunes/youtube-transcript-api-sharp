@@ -97,11 +97,7 @@ namespace YoutubeTranscriptApi
         {
             string debug_url = string.Format(Settings.WATCH_URL, videoId);
             var raw_result = _httpClient.GetStringAsync(debug_url).Result;
-            var result = raw_result.Replace(
-                @"\u0026", "&"
-                ).Replace(
-                "\\", ""
-                );
+            var result = Regex.Unescape(raw_result);
             return result;
         }
     }
